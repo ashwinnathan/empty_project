@@ -4,9 +4,14 @@ import Test.QuickCheck
 main :: IO ()
 main = putStrLn "Test suite not yet implemented"
 
-
 makeBoard :: [[Maybe Piece]] -> Board
 makeBoard = undefined
+
+testValidMove :: Test 
+testValidMove = TestList [
+    "Knight" ~: not (valid initialBoard (0,0) (1,4))
+    "Queen" ~: not (valid initialBoard (0,0) (1,4))
+]
 
 testCheckEnd :: Test
 testCheckEnd = TestList [
@@ -21,3 +26,10 @@ testCheckEnd = TestList [
 prop_validMove :: Game -> Location -> Bool
 prop_validMove game move =
     isJust (makeMove game move) == valid (board game) move
+
+instance Arbitrary Game where
+    arbitrary = Game <$> arbitrary <*> arbitrary
+instance Arbitrary Player where
+    arbitrary = elements [W, B]
+instance Arbitrary Pieces where
+    arbitrary = elements pieces

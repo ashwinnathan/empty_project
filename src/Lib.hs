@@ -51,8 +51,8 @@ class Monad m => Interface m where
     showBoard       :: Game -> m ()
     
  -- | make moves until someone wins
- playGame :: Interface m => State Game Move -> m ()
- playGame game = do
+playGame :: Interface m => State Game Move -> m ()
+playGame game = do
      x <- S.get
     message showBoard (board game)
     case checkEnd $ board game of
@@ -64,17 +64,18 @@ class Monad m => Interface m where
        case makeMove game move of
          Just game' -> playGame game'
          Nothing    -> error "BUG: move is invalid!"
- instance Interface IO where
+         
+instance Interface IO where
     getMove       = undefined
     playerMessage = undefined
     message       = undefined
 
--- instance Arbitrary Game where
---     arbitrary = Game <$> arbitrary <*> arbitrary
--- instance Arbitrary Player where
---     arbitrary = elements [W, B]
--- instance Arbitrary Pieces where
---     arbitrary = elements pieces
+instance Arbitrary Game where
+    arbitrary = Game <$> arbitrary <*> arbitrary
+instance Arbitrary Player where
+    arbitrary = elements [W, B]
+instance Arbitrary Pieces where
+    arbitrary = elements pieces
 
 
 

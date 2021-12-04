@@ -1,10 +1,10 @@
 import Control.Monad.State
 import qualified Data.Map as M
 import Data.Maybe (isJust)
-import Test.HUnit
+import Test.HUnit hiding (State)
 import Test.QuickCheck
-import State (State)
-import qualified State as S
+-- import State (State)
+-- import qualified State as S
 
 --module Lib
 --   (initialGame

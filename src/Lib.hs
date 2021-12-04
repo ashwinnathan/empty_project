@@ -3,11 +3,10 @@ import qualified Data.Map as M
 import Data.Maybe (isJust)
 import Test.HUnit
 import Test.QuickCheck
+import State (State)
+import qualified State as S
 
--- import State (State)
--- import qualified State as S
-
--- module Lib
+--module Lib
 --   (initialGame
 --   )
 -- where
@@ -40,7 +39,7 @@ checkEnd = undefined
 valid :: Board -> Move -> Bool
 valid = undefined
 
-getBoardPiece :: Board -> Location -> Piece
+getBoardPiece :: Board -> Location -> Maybe Piece
 getBoardPiece = undefined
 
 -- | update game state with move
@@ -50,33 +49,7 @@ makeMove = undefined
 generateMoves :: Piece -> Location -> [Location]
 generateMoves = undefined
 
-class Monad m => Interface m where
-  -- ask the current player for their next move
-  getMove :: Game -> m Location
 
-  -- send a message to players
-  message :: String -> m ()
-  showBoard :: Game -> m ()
-
--- Retrieve user move input and progress game state until end
--- playGame :: Interface m => State Game Move -> m ()
--- playGame game = do
---      x <- S.get
---     message showBoard (board game)
---     case checkEnd $ board game of
---      Just (Win p)  -> message $ "Player " ++ show p ++ " wins!"
---      Just Tie      -> message $ "It's a Tie!"
---      Nothing       -> do
---        playerMessage (current game) $ "It's your turn"
---        move <- getMove game
---        case makeMove game move of
---          Just game' -> playGame game'
---          Nothing    -> error "BUG: move is invalid!"
-
-instance Interface IO where
-  getMove = undefined
-  playerMessage = undefined
-  message = undefined
 
 -- --Ex 1
 -- scrapper :: String -> IO (Maybe [Game])

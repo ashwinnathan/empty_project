@@ -1,32 +1,65 @@
 import Control.Monad.State
+import Data.Char
+import Data.List
 import qualified Data.Map as M
 import Data.Maybe (isJust)
-import Test.HUnit
+import Test.HUnit hiding (State)
 import Test.QuickCheck
 
--- import State (State)
--- import qualified State as S
+data Player = W | B
 
--- module Lib
---   (initialGame
---   )
--- where
+type Position = (Int, Int)
 
-data Player = W | B deriving (Eq, Show)
+data Piece = Piece Player PieceName
 
-data Location = Loc Int Int deriving (Eq, Ord, Show)
+showPiece :: Piece -> Char
+showPiece (Piece player p) = case player of
+  W -> toLower (showPieceName p)
+  B -> showPieceName p
 
-data Piece = Piece Player PieceName deriving (Eq)
+data PieceName = Pawn | Rook | Bishop | Knight | King | Queen deriving (Eq)
 
-data PieceName = Pawn | Rook | Bishop | Knight | King | Queen deriving (Eq, Show)
+showPieceName :: PieceName -> Char
+showPieceName Pawn = 'P'
+showPieceName Rook = 'R'
+showPieceName Bishop = 'B'
+showPieceName Knight = 'N'
+showPieceName King = 'K'
+showPieceName Queen = 'Q'
 
 type Board = [[Maybe Piece]]
 
-data Game = Game {board :: Board, current :: Player} deriving (Eq, Show)
+data Game = Game {board :: Board, current :: Player}
 
-data End = Win Player | Tie deriving (Eq, Show)
+data End = Win Player | Tie
 
-data Move = Move {start :: Location, end :: Location} deriving (Eq, Show)
+data Move = Move {start :: Position, end :: Position}
+
+readPieceName :: Char -> PieceName
+readPieceName 'P' = Pawn
+readPieceName 'R' = Rook
+readPieceName 'B' = Bishop
+readPieceName 'N' = Knight
+readPieceName 'K' = King
+readPieceName 'Q' = Queen
+readPieceName _ = error "No such piece"
+
+initialBoard :: Board
+initialBoard =
+  [map ((Just . Piece B) . readPieceName) "RNBKQBNR", replicate 8 (Just (Piece B Pawn))]
+    ++ replicate 4 (replicate 8 Nothing)
+    ++ [replicate 8 (Just (Piece W Pawn)), map ((Just . Piece W) . readPieceName) "RNBKQBNR"]
+
+stringifyBoard :: Board -> [String]
+stringifyBoard = map (map (maybe '.' showPiece))
+
+displayBoard :: Board -> IO ()
+displayBoard b = do
+  putStrLn $ "  " ++ intersperse ' ' ['A' .. 'H']
+  putStrLn $ "  " ++ replicate 15 '-'
+  mapM_
+    (\s -> let spacedString = intersperse ' ' s ++ "\n" in putStrLn spacedString)
+    (zipWith (:) (reverse ['1' .. '8']) (stringifyBoard b))
 
 -- | starting board for the game
 initialGame :: State Game Move
@@ -40,19 +73,19 @@ checkEnd = undefined
 valid :: Board -> Move -> Bool
 valid = undefined
 
-getBoardPiece :: Board -> Location -> Piece
+getBoardPiece :: Board -> Position -> Piece
 getBoardPiece = undefined
 
 -- | update game state with move
-makeMove :: Move -> State Game Move
+makeMove :: Move -> State Game ()
 makeMove = undefined
 
-generateMoves :: Piece -> Location -> [Location]
+generateMoves :: Piece -> Position -> [Position]
 generateMoves = undefined
 
 class Monad m => Interface m where
   -- ask the current player for their next move
-  getMove :: Game -> m Location
+  getMove :: Game -> m Position
 
   -- send a message to players
   message :: String -> m ()
@@ -75,7 +108,7 @@ class Monad m => Interface m where
 
 instance Interface IO where
   getMove = undefined
-  playerMessage = undefined
+  showBoard = undefined
   message = undefined
 
 -- --Ex 1

@@ -88,7 +88,23 @@ getBoardPiece b (x, y) = (b !! x) !! y
 
 -- | update game state with move
 makeMove :: Move -> State Game ()
-makeMove = undefined
+makeMove mv = do
+  st <- S.get
+  S.put (mover mv st)
+  return () 
+
+mover :: Move -> Game -> Game
+mover mv st = case getBoardPiece (board st) (start mv) of
+    Nothing -> error "Invalid move"
+    Just piece -> case current st of
+        W -> Game (updateBoard (board st) piece mv) B
+        B -> Game (updateBoard (board st) piece mv) W
+
+updateBoard :: Board -> Piece -> Move -> Board
+updateBoard board p mv  = moveHelper (moveHelper board Nothing (start mv)) (Just p) (end mv) where
+    moveHelper :: Board -> Maybe Piece -> Position -> Board
+    moveHelper m x (r,c) = take r m ++ [take c (m !! r) ++ [x] ++ drop (c + 1) (m !! r)] ++ drop (r + 1) m
+
 
 generateMoves :: Piece -> Position -> [Position]
 generateMoves (Piece player p) pos@(x, y) = case p of

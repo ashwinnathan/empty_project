@@ -3,6 +3,7 @@ import Data.Char
 import Data.List
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe, isJust)
+import Numeric (readInt)
 import Test.HUnit hiding (State)
 import Test.QuickCheck
 
@@ -11,6 +12,11 @@ data Player = W | B
 type Position = (Int, Int)
 
 data Piece = Piece Player PieceName
+
+instance Show Piece where
+  show (Piece player p) = case player of
+    W -> [toLower (showPieceName p)]
+    B -> [showPieceName p]
 
 showPiece :: Piece -> Char
 showPiece (Piece player p) = case player of
@@ -35,6 +41,12 @@ data End = Win Player | Tie
 
 data Move = Move {start :: Position, end :: Position}
 
+instance Show Move where
+  show mv =
+    let (x, y) = start mv
+     in let (x2, y2) = end mv
+         in show x ++ "," ++ show y ++ " " ++ show x2 ++ "," ++ show y2
+
 readPieceName :: Char -> PieceName
 readPieceName 'P' = Pawn
 readPieceName 'R' = Rook
@@ -43,6 +55,9 @@ readPieceName 'N' = Knight
 readPieceName 'K' = King
 readPieceName 'Q' = Queen
 readPieceName _ = error "No such piece"
+
+letterToNumberMap :: [(Char, Char)]
+letterToNumberMap = zip ['A' .. 'H'] ['1' .. '8']
 
 initialBoard :: Board
 initialBoard =
@@ -62,11 +77,8 @@ displayBoard b = do
     (zipWith (:) (reverse ['1' .. '8']) (stringifyBoard b))
 
 -- | starting board for the game
-initialGame :: State Game ()
-initialGame = do
-  st <- S.get
-  S.put (st {board = initialBoard, current = W})
-  return ()
+initialGame :: Game
+initialGame = Game {board = initialBoard, current = W}
 
 -- | is the board still playable
 checkEnd :: Board -> Maybe End
@@ -86,25 +98,27 @@ inBounds (x, y) = x >= 0 && y >= 0 && x <= 8 && y <= 8
 getBoardPiece :: Board -> Position -> Maybe Piece
 getBoardPiece b (x, y) = (b !! x) !! y
 
--- | update game state with move
-makeMove :: Move -> State Game ()
-makeMove mv = do
-  st <- S.get
-  S.put (mover mv st)
-  return () 
+parseMove :: String -> Maybe Move
+parseMove str = case words str of
+  [[oldX, oldY], [newX, newY]] -> do
+    x1 <- lookup oldX letterToNumberMap
+    x2 <- lookup newX letterToNumberMap
+    return $ Move (8 - (read [oldY] :: Int), (read [x1] :: Int) - 1) (8 - (read [newY] :: Int), (read [x2] :: Int) - 1)
+  _ -> Nothing
 
-mover :: Move -> Game -> Game
-mover mv st = case getBoardPiece (board st) (start mv) of
-    Nothing -> error "Invalid move"
-    Just piece -> case current st of
-        W -> Game (updateBoard (board st) piece mv) B
-        B -> Game (updateBoard (board st) piece mv) W
+-- | update game state with move
+makeMove :: Move -> Game -> Game
+makeMove mv st = case getBoardPiece (board st) (start mv) of
+  Nothing -> error "Invalid move"
+  Just piece -> case current st of
+    W -> Game (updateBoard (board st) piece mv) B
+    B -> Game (updateBoard (board st) piece mv) W
 
 updateBoard :: Board -> Piece -> Move -> Board
-updateBoard board p mv  = moveHelper (moveHelper board Nothing (start mv)) (Just p) (end mv) where
+updateBoard board p mv = moveHelper (moveHelper board Nothing (start mv)) (Just p) (end mv)
+  where
     moveHelper :: Board -> Maybe Piece -> Position -> Board
-    moveHelper m x (r,c) = take r m ++ [take c (m !! r) ++ [x] ++ drop (c + 1) (m !! r)] ++ drop (r + 1) m
-
+    moveHelper m x (r, c) = take r m ++ [take c (m !! r) ++ [x] ++ drop (c + 1) (m !! r)] ++ drop (r + 1) m
 
 generateMoves :: Piece -> Position -> [Position]
 generateMoves (Piece player p) pos@(x, y) = case p of
@@ -129,30 +143,19 @@ xyVectors (x, y) = [(newX, y) | newX <- [1 .. 8]] ++ [(x, newY) | newY <- [1 .. 
 diagVectors :: Position -> [Position]
 diagVectors (x, y) = [(x + newX, y + newY) | newX <- [(-8) .. 8], newY :: Int <- [(-8) .. 8], newX == newY]
 
-class Monad m => Interface m where
-  -- ask the current player for their next move
-  getMove :: Game -> m Position
-
-  -- send a message to players
-  message :: String -> m ()
-  showBoard :: Game -> m ()
-
 -- Retrieve user move input and progress game state until end
--- playGame :: Interface m => State Game Move -> m ()
--- playGame game = do
---      x <- S.get
---     message showBoard (board game)
---     case checkEnd $ board game of
---      Just (Win p)  -> message $ "Player " ++ show p ++ " wins!"
---      Just Tie      -> message $ "It's a Tie!"
---      Nothing       -> do
---        playerMessage (current game) $ "It's your turn"
---        move <- getMove game
---        case makeMove game move of
---          Just game' -> playGame game'
---          Nothing    -> error "BUG: move is invalid!"
+playGame :: StateT Game IO ()
+playGame = do
+  liftIO $ putStrLn "Input next move"
+  move <- liftIO getLine
+  game <- get
+  let inputMove = parseMove move
+   in case inputMove of
+        Nothing -> liftIO $ putStrLn "Could not parse move"
+        Just validMove -> put $ makeMove validMove game
+  newGame <- get
+  liftIO $ displayBoard (board newGame)
+  playGame
 
-instance Interface IO where
-  getMove = undefined
-  showBoard = undefined
-  message = undefined
+main :: IO ()
+main = evalStateT playGame initialGame

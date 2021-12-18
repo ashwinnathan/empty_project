@@ -27,9 +27,12 @@ prop_validMove :: Game -> Location -> Bool
 prop_validMove game move =
     isJust (makeMove game move) == valid (board game) move
 
-instance Arbitrary Game where
-    arbitrary = Game <$> arbitrary <*> arbitrary
 instance Arbitrary Player where
     arbitrary = elements [W, B]
-instance Arbitrary Pieces where
-    arbitrary = elements pieces
+instance Arbitrary PieceName where
+    arbitrary = elements [Pawn, Rook, Bishop, Knight, King, Queen]
+instance Arbitrary Piece where
+    arbitrary = Piece <$> arbitrary <*> arbitrary
+instance Arbitrary Board where
+    arbitrary = undefined --sized list
+

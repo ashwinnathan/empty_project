@@ -24,13 +24,13 @@ data Piece = Piece Player PieceName
 
 instance Show Piece where
   show (Piece player p) = case player of
-    W -> [toLower (showPieceName p)]
-    B -> [showPieceName p]
+    B -> [toLower (showPieceName p)]
+    W -> [showPieceName p]
 
 showPiece :: Piece -> Char
 showPiece (Piece player p) = case player of
-  W -> toLower (showPieceName p)
-  B -> showPieceName p
+  B -> toLower (showPieceName p)
+  W -> showPieceName p
 
 data PieceName = Pawn | Rook | Bishop | Knight | King | Queen deriving (Eq)
 
@@ -70,9 +70,9 @@ letterToNumberMap = zip ['A' .. 'H'] ['1' .. '8']
 
 initialBoard :: Board
 initialBoard =
-  [map ((Just . Piece B) . readPieceName) "RNBKQBNR", replicate 8 (Just (Piece B Pawn))]
+  [map ((Just . Piece B) . readPieceName) "RNBQKBNR", replicate 8 (Just (Piece B Pawn))]
     ++ replicate 4 (replicate 8 Nothing)
-    ++ [replicate 8 (Just (Piece W Pawn)), map ((Just . Piece W) . readPieceName) "RNBKQBNR"]
+    ++ [replicate 8 (Just (Piece W Pawn)), map ((Just . Piece W) . readPieceName) "RNBQKBNR"]
 
 stringifyBoard :: Board -> [String]
 stringifyBoard = map (map (maybe '.' showPiece))

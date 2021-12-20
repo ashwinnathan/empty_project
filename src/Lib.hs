@@ -16,7 +16,7 @@ instance Show Direction where
     H -> show 'H'
     D -> show 'D'
 
-data Player = W | B deriving (Eq, Show)
+data Player = W | B deriving (Eq)
 
 type Position = (Int, Int)
 
@@ -235,20 +235,21 @@ playGame = do
   game <- get
   let inputMove = parseMove move
    in case inputMove of
-        Nothing -> do 
-          liftIO $ putStrLn "Could not parse move"
-          playGame
-        Just validMove -> do 
-          if valid (board game) validMove then put $ makeMove validMove game else liftIO $ putStrLn "Invalid move"
-          newGame <- get
-          liftIO $ displayBoard (board newGame)
-          let nextPlayer = if current game == W then B else W
-          let currPlayer = current newGame in 
-            if isInCheck newGame 
-              then liftIO $ putStrLn (show currPlayer ++ " is in check! Next move " ++ show nextPlayer) 
-              else liftIO $ putStrLn ("Next move " ++ show currPlayer) 
-          put (newGame {current = nextPlayer})
-          playGame
+        Nothing -> liftIO $ putStrLn "Could not parse move"
+        Just validMove -> if case getBoardPiece (board game) (start validMove) of
+          Nothing -> True
+          Just pn -> case pn of
+            (Piece wb pn ) -> wb == current game
+          then (if valid (board game) validMove then if isInCheck (makeMove validMove game) then
+          (do
+            put $ makeMove validMove game
+            liftIO $ putStrLn "In check")
+            else put $ makeMove validMove game
+          else liftIO $ putStrLn "Invalid move")
+          else liftIO $ putStrLn "Wrong player's move"
+  newGame <- get
+  liftIO $ displayBoard (board newGame)
+  playGame
 
 main :: IO ()
 main = evalStateT playGame initialGame

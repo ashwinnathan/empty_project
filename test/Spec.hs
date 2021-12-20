@@ -39,3 +39,15 @@ instance Arbitrary Piece where
 instance Arbitrary Board where
     arbitrary = undefined --sized list
 
+x :: Board
+x = [[Just $ Piece B Rook, Just $ Piece B Knight, Just $ Piece B Bishop, Nothing, Just $ Piece B King, Just $ Piece B Bishop, Just $ Piece B Knight, Just $ Piece B Rook],
+    [Just $ Piece B Pawn, Just $ Piece B Pawn, Just $ Piece B Pawn, Just $ Piece B Pawn, Nothing, Just $ Piece B Pawn, Just $ Piece B Pawn, Just $ Piece B Pawn],
+    [Nothing, Nothing, Nothing, Nothing, Just $ Piece B Pawn, Nothing, Nothing, Nothing],
+    [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing],
+    [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Just $ Piece W Pawn, Just $ Piece B Queen],
+    [Nothing, Nothing, Nothing, Nothing, Nothing, Just $ Piece W Pawn, Nothing, Nothing],
+    [Just $ Piece W Pawn, Just $ Piece W Pawn, Just $ Piece W Pawn, Just $ Piece W Pawn, Just $ Piece W Pawn, Nothing, Nothing, Just $ Piece W Pawn],
+    [Just $ Piece W Rook, Just $ Piece W Knight, Just $ Piece W Bishop, Just $ Piece W Queen, Just $ Piece W King, Just $ Piece W Bishop, Just $ Piece W Knight, Just $ Piece W Rook]]
+
+xs :: Game
+xs = Game {board = x, current = W}

@@ -1,4 +1,4 @@
-module Lib where 
+module Lib where
 
 import Control.Monad.State as S
 import Data.Char
@@ -91,11 +91,20 @@ displayBoard b = do
 initialGame :: Game
 initialGame = Game {board = initialBoard, current = W}
 
--- | TODO: Checkmate logic I think is as follows
+-- |Checkmate logic I think is as follows
 -- generate all possible valid move positions for a given player
 -- fold over the list of moves and call isInCheck on each one, if at least one potential move returns false then we know not a checkmate
-checkEnd :: Board -> Maybe End
-checkEnd = undefined
+
+checkEnd :: Game -> Maybe End
+checkEnd g
+  | any ((==False) . ( isInCheck . makeMoveSamePlayer g)) (generateAllMoves (board g) (current g)) = Nothing
+  | isInCheck g = Just (Win $ opposite (current g))
+  | otherwise = Just Tie
+
+
+opposite :: Player -> Player
+opposite W = B
+opposite B = W
 
 -- generate all opponent valid moves and check if current player king is in the
 -- new position of any valid move (meaning it can be "captured")
@@ -108,6 +117,20 @@ isInCheck g =
     )
     False
     (generateAllOppMoves (board g) (current g))
+
+generateAllMoves :: Board -> Player -> [Move]
+generateAllMoves b pl =
+  foldr
+    ( \(x, y) acc -> case getBoardPiece b (x, y) of
+        Nothing -> acc
+        Just p@(Piece player pieceName) ->
+          if player == pl
+            then map (Move (x, y)) (filter (valid b . Move (x, y)) (generateMoves b p (x, y)))  ++ acc
+            else acc
+    )
+    []
+    [(newX, newY) | newX <- [0 .. 7], newY <- [0 .. 7]]
+
 
 generateAllOppMoves :: Board -> Player -> [Position]
 generateAllOppMoves b pl =
@@ -139,7 +162,7 @@ valid b m@(Move oldP@(oldX, oldY) newP@(newX, newY)) =
             King ->
               isNothing (getBoardPiece b newP)
                 || ((oldX /= newX && newX /= newY) && canCaptureOrIsEmpty b m player)
-            _ -> True
+            Pawn -> True
 
 getDirection :: Move -> Direction
 getDirection m@(Move oldP@(oldX, oldY) newP@(newX, newY)) = case (oldX - newX, oldY - newY) of
@@ -164,15 +187,15 @@ parseMove str = case words str of
   _ -> Nothing
 
 -- | update game state with move
-makeMove :: Move -> Game -> Game
-makeMove mv st = case getBoardPiece (board st) (start mv) of
+makeMove :: Game -> Move -> Game
+makeMove st mv= case getBoardPiece (board st) (start mv) of
   Nothing -> error "Invalid move"
   Just piece -> case current st of
     W -> Game (updateBoard (board st) piece mv) B
     B -> Game (updateBoard (board st) piece mv) W
 
-makeMoveSamePlayer :: Move -> Game -> Game
-makeMoveSamePlayer mv st = case getBoardPiece (board st) (start mv) of
+makeMoveSamePlayer ::  Game -> Move ->Game
+makeMoveSamePlayer st mv = case getBoardPiece (board st) (start mv) of
   Nothing -> error "Invalid move"
   Just piece -> case current st of
     W -> Game (updateBoard (board st) piece mv) W
@@ -194,11 +217,11 @@ generateMoves b (Piece player p) pos@(x, y) = case p of
   -- Pawn can only move in y-axis UNLESS it captures opposing piece
   Pawn -> case player of
     W ->
-      ([(4, y) | x == 6])
+      ([(4, y) | x == 6 && isNothing (getBoardPiece b (5, y)) && isNothing (getBoardPiece b (4, y))])
         ++ ([(x - 1, y) | isNothing (getBoardPiece b (x - 1, y))])
         ++ ([(x - 1, newY) | newY <- [y - 1, y + 1], isPlayer (getBoardPiece b (x - 1, newY)) B])
     B ->
-      ([(3, y) | x == 1])
+      ([(3, y) | x == 1 && isNothing (getBoardPiece b (2, y)) && isNothing (getBoardPiece b (3, y))])
         ++ ([(x + 1, y) | isNothing (getBoardPiece b (x + 1, y))])
         ++ ([(x + 1, newY) | newY <- [y - 1, y + 1], isPlayer (getBoardPiece b (x + 1, newY)) W])
   -- Knight has specified movement so generate list of relative move vectors and add to existing coordinates
@@ -222,9 +245,9 @@ doesIntersect b m@(Move oldP@(oldX, oldY) newP@(newX, newY)) d =
   case d of
     V -> foldr (\x acc -> isNothing (getBoardPiece b (x, newY)) && acc) True [min newX oldX + 1 .. max newX oldX - 1]
     H -> foldr (\y acc -> isNothing (getBoardPiece b (oldX, y)) && acc) True [min newY oldY + 1 .. max newY oldY - 1]
-    D -> foldr (\(x, y) acc -> isNothing (getBoardPiece b (x, y)) && acc) True 
-      [(newX, newY) | newX <- [min newX oldX + 1 .. max newX oldX - 1], 
-                      newY <- [min newY oldY + 1 .. max newY oldY - 1], 
+    D -> foldr (\(x, y) acc -> isNothing (getBoardPiece b (x, y)) && acc) True
+      [(newX, newY) | newX <- [min newX oldX + 1 .. max newX oldX - 1],
+                      newY <- [min newY oldY + 1 .. max newY oldY - 1],
                       abs (newX - oldX) == abs (newY - oldY)]
 
 xyVectors :: Position -> [Position]

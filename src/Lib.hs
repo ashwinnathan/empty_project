@@ -205,7 +205,7 @@ moveHelper :: Board -> Maybe Piece -> Position -> Board
 moveHelper m x (r, c) = take r m ++ [take c (m !! r) ++ [x] ++ drop (c + 1) (m !! r)] ++ drop (r + 1) m
 
 -- updates the game without changing the player
-makeMoveSamePlayer ::  Game -> Move ->Game
+makeMoveSamePlayer ::  Game -> Move -> Game
 makeMoveSamePlayer st mv = case getBoardPiece (board st) (start mv) of
   Nothing -> error "Invalid move"
   Just piece -> case current st of

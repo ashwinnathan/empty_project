@@ -169,6 +169,13 @@ makeMove mv st = case getBoardPiece (board st) (start mv) of
     W -> Game (updateBoard (board st) piece mv) B
     B -> Game (updateBoard (board st) piece mv) W
 
+makeMoveSamePlayer :: Move -> Game -> Game
+makeMoveSamePlayer mv st = case getBoardPiece (board st) (start mv) of
+  Nothing -> error "Invalid move"
+  Just piece -> case current st of
+    W -> Game (updateBoard (board st) piece mv) W
+    B -> Game (updateBoard (board st) piece mv) B
+
 updateBoard :: Board -> Piece -> Move -> Board
 updateBoard board p mv = moveHelper (moveHelper board Nothing (start mv)) (Just p) (end mv)
   where
@@ -240,11 +247,13 @@ playGame = do
           Nothing -> True
           Just pn -> case pn of
             (Piece wb pn ) -> wb == current game
-          then (if valid (board game) validMove then if isInCheck (makeMove validMove game) then
+          then (if valid (board game) validMove then if not (isInCheck (makeMoveSamePlayer validMove game)) then 
+            (if isInCheck (makeMove validMove game) then
           (do
             put $ makeMove validMove game
             liftIO $ putStrLn "In check")
-            else put $ makeMove validMove game
+            else put $ makeMove validMove game)
+            else liftIO $ putStrLn "You are in check"
           else liftIO $ putStrLn "Invalid move")
           else liftIO $ putStrLn "Wrong player's move"
   newGame <- get
@@ -252,4 +261,6 @@ playGame = do
   playGame
 
 main :: IO ()
-main = evalStateT playGame initialGame
+main = do 
+  displayBoard initialBoard
+  evalStateT playGame initialGame

@@ -242,11 +242,12 @@ playGame = do
           if valid (board game) validMove then put $ makeMove validMove game else liftIO $ putStrLn "Invalid move"
           newGame <- get
           liftIO $ displayBoard (board newGame)
+          let nextPlayer = if current game == W then B else W
           let currPlayer = current newGame in 
             if isInCheck newGame 
-              then liftIO $ putStrLn (show currPlayer ++ " is in check! Next move " ++ show currPlayer) 
+              then liftIO $ putStrLn (show currPlayer ++ " is in check! Next move " ++ show nextPlayer) 
               else liftIO $ putStrLn ("Next move " ++ show currPlayer) 
-          put (newGame {current = if current game == W then B else W})
+          put (newGame {current = nextPlayer})
           playGame
 
 main :: IO ()

@@ -29,10 +29,10 @@ playGame = do
                     -- En passant case logic
                     if case (getBoardPiece (board game) (start validMove), getBoardPiece (board game) (end validMove)) of
                       (Just (Piece W Pawn), Nothing) -> case (start validMove, end validMove) of
-                        ((a, b), (c, d)) -> a == 3 && c == 2 && ((b-d) == 1 || (b-d) == -1) 
+                        ((a, b), (c, d)) -> a == 3 && c == 2 && ((b-d) == 1 || (b-d) == -1)
                           && getBoardPiece (board game) (a, d) == Just (Piece B Pawn) && getBoardPiece (board (head (history game))) (a-2, d) == Just (Piece B Pawn)
                       (Just (Piece B Pawn), Nothing) -> case (start validMove, end validMove) of
-                        ((a, b), (c, d)) -> a == 4 && c == 5 && ((b-d) == 1 || (b-d) == -1) 
+                        ((a, b), (c, d)) -> a == 4 && c == 5 && ((b-d) == 1 || (b-d) == -1)
                           && getBoardPiece (board game) (a, d) == Just (Piece W Pawn) && getBoardPiece (board (head (history game))) (a+2, d) == Just (Piece W Pawn)
                       _ -> False
                       then
@@ -58,9 +58,27 @@ playGame = do
                                     if isInCheck (makeMove game validMove )
                                       then liftIO $ putStrLn "In check"
                                       else pure ()
-                                      --Checks for valid moves
-                                    let updateGame = makeMove game validMove
-                                    put updateGame
+                                    if case getBoardPiece (board game) (start validMove) of
+                                      Just (Piece W Pawn) -> case (start validMove, end validMove) of
+                                        ((a, b), (c, d)) -> a == 1 && c == 0
+                                      Just (Piece B Pawn) -> case (start validMove, end validMove) of
+                                        ((a, b), (c, d)) -> a == 6 && c == 7
+                                      _ -> False
+                                      then do
+                                        liftIO $ putStrLn "Which piece would you like to promote to? (Q/R/B/N)"
+                                        move <- liftIO getLine
+                                        case move of
+                                          "Q" -> 
+                                            put $ makeMove (Game (moveHelper (board game) (Just (Piece (current game) Queen)) (start validMove)) (current game) (history game)) validMove
+                                          "R" -> 
+                                            put $ makeMove (Game (moveHelper (board game) (Just (Piece (current game) Rook)) (start validMove)) (current game) (history game)) validMove
+                                          "B" -> 
+                                            put $ makeMove (Game (moveHelper (board game) (Just (Piece (current game) Bishop)) (start validMove)) (current game) (history game)) validMove
+                                          "N" -> 
+                                            put $ makeMove (Game (moveHelper (board game) (Just (Piece (current game) Knight)) (start validMove)) (current game) (history game)) validMove
+                                          _ -> liftIO $ putStrLn "Invalid input"
+                                      else
+                                        put $ makeMove game validMove
                                   else liftIO $ putStrLn "You are in check"
                               else liftIO $ putStrLn "Invalid move"
                           ))

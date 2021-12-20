@@ -1,34 +1,44 @@
 module Main where
 
+import Control.Monad.State as S
 import Lib
 
-main :: IO ()
-main = playGame initialGame
-
-class Monad m => Interface m where
-  -- ask the current player for their next move
-  getMove :: Game -> m Location
-  -- send a message to players
-  message :: String -> m ()
-  showBoard :: Game -> m ()
-
 -- Retrieve user move input and progress game state until end
-playGame :: Interface m => State Game Move -> m ()
-playGame = undefined
--- playGame gameState = do
---     game <- S.get
---     message showBoard (board game)
---     case checkEnd $ board game of
---      Just (Win p)  -> message $ "Player " ++ show p ++ " wins!"
---      Just Tie      -> message $ "It's a Tie!"
---      Nothing       -> do
---        playerMessage (current game) $ "It's your turn"
---        move <- getMove game
---        S.set move
---        case makeMove game move of
---          Just game' -> playGame game'
---          Nothing    -> error "BUG: move is invalid!"
+playGame :: StateT Game IO ()
+playGame = do
+  liftIO $ putStrLn "Input next move"
+  move <- liftIO getLine
+  game <- get
+  let inputMove = parseMove move
+   in case inputMove of
+        Nothing -> liftIO $ putStrLn "Could not parse move"
+        Just validMove ->
+          if case getBoardPiece (board game) (start validMove) of
+            Nothing -> True
+            Just pn -> case pn of
+              (Piece wb pn) -> wb == current game
+            then
+              ( if valid (board game) validMove
+                  then
+                    if not (isInCheck (makeMoveSamePlayer validMove game))
+                      then
+                        ( if isInCheck (makeMove validMove game)
+                            then
+                              ( do
+                                  put $ makeMove validMove game
+                                  liftIO $ putStrLn "In check"
+                              )
+                            else put $ makeMove validMove game
+                        )
+                      else liftIO $ putStrLn "You are in check"
+                  else liftIO $ putStrLn "Invalid move"
+              )
+            else liftIO $ putStrLn "Wrong player's move"
+  newGame <- get
+  liftIO $ displayBoard (board newGame)
+  playGame
 
-instance Interface IO where
-  getMove = undefined
-  message = undefined
+main :: IO ()
+main = do
+  displayBoard initialBoard
+  evalStateT playGame initialGame

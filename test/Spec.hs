@@ -27,6 +27,9 @@ prop_validMove :: Game -> Location -> Bool
 prop_validMove game move =
     isJust (makeMove game move) == valid (board game) move
 
+-- isJust (makeMove game move) where move is a random generated index and is part of the list  of generatedmoves,
+--  make sure that the board is valid 
+
 instance Arbitrary Player where
     arbitrary = elements [W, B]
 instance Arbitrary PieceName where

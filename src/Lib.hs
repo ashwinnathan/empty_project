@@ -220,12 +220,10 @@ doesIntersect b m@(Move oldP@(oldX, oldY) newP@(newX, newY)) d =
   case d of
     V -> foldr (\x acc -> isNothing (getBoardPiece b (x, newY)) && acc) True [min newX oldX + 1 .. max newX oldX - 1]
     H -> foldr (\y acc -> isNothing (getBoardPiece b (oldX, y)) && acc) True [min newY oldY + 1 .. max newY oldY - 1]
-    D -> True
-
--- D ->
---   if oldX - newX == oldY - newY
---     then foldr (\(x, y) acc -> isNothing (getBoardPiece b (x, y)) && acc) True [(newX, newY) | newX <- [min newX oldX + 1 .. max newX oldX - 1], newY <- [min newY oldY + 1 .. max newY oldY - 1], newX == newY]
---     else foldr (\(x, y) acc -> isNothing (getBoardPiece b (x, y)) && acc) True [(newX, newY) | newX <- [min newX oldX + 1 .. max newX oldX - 1], newY <- [min newY oldY + 1 .. max newY oldY - 1], newX * (-1) == newY]
+    D -> foldr (\(x, y) acc -> isNothing (getBoardPiece b (x, y)) && acc) True 
+      [(newX, newY) | newX <- [min newX oldX + 1 .. max newX oldX - 1], 
+                      newY <- [min newY oldY + 1 .. max newY oldY - 1], 
+                      abs (newX - oldX) == abs (newY - oldY)]
 
 xyVectors :: Position -> [Position]
 xyVectors (x, y) = [(newX, y) | newX <- [0 .. 7]] ++ [(x, newY) | newY <- [0 .. 7]]

@@ -21,15 +21,17 @@ playGame = do
               ( if valid (board game) validMove
                   then
                     if not (isInCheck (makeMoveSamePlayer validMove game))
-                      then
-                        ( if isInCheck (makeMove validMove game)
-                            then
-                              ( do
-                                  put $ makeMove validMove game
-                                  liftIO $ putStrLn "In check"
-                              )
-                            else put $ makeMove validMove game
-                        )
+                      then do
+                        if isInCheck (makeMove validMove game)
+                          then liftIO $ putStrLn "In check"
+                          else pure ()
+                        let updateGame = makeMove validMove game
+                        put $ updateGame {history = Just game}
+                        liftIO $ putStrLn "Do you want to undo (Y/N)?"
+                        res <- liftIO getLine
+                        case res of
+                          "Y" -> put game
+                          _ -> pure ()
                       else liftIO $ putStrLn "You are in check"
                   else liftIO $ putStrLn "Invalid move"
               )

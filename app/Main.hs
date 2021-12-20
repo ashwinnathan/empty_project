@@ -8,41 +8,36 @@ import Lib
 playGame :: StateT Game IO ()
 playGame = do
   game <- get
-  case checkEnd game of
-    Just (Win W) -> liftIO $ putStrLn "White Wins!"
-    Just (Win B) -> liftIO $ putStrLn "Black Wins!"
-    Just Tie -> liftIO $ putStrLn "Stalemate"
-    Nothing -> do
-      liftIO $ putStrLn "Input next move"
-      move <- liftIO getLine
-      let inputMove = parseMove move
-        in case inputMove of
-            Nothing -> liftIO $ putStrLn "Could not parse move"
-            Just validMove ->
-              if case getBoardPiece (board game) (start validMove) of
-                Nothing -> True
-                Just pn -> case pn of
-                  (Piece wb pn) -> wb == current game
-                then
-                  ( if valid (board game) validMove
-                      then
-                        if not (isInCheck (makeMoveSamePlayer game validMove ))
-                          then
-                            ( if isInCheck (makeMove game validMove )
-                                then
-                                  ( do
-                                      put $ makeMove game validMove
-                                      liftIO $ putStrLn "Check!"
-                                  )
-                                else put $ makeMove game validMove
-                            )
-                          else liftIO $ putStrLn "You are in check"
-                      else liftIO $ putStrLn "Invalid move"
-                  )
-                else liftIO $ putStrLn "Wrong player's move"
-      newGame <- get
-      liftIO $ displayBoard (board newGame)
-      playGame
+  let inputMove = parseMove move
+   in case inputMove of
+        Nothing -> liftIO $ putStrLn "Could not parse move"
+        Just validMove ->
+          if case getBoardPiece (board game) (start validMove) of
+            Nothing -> True
+            Just pn -> case pn of
+              (Piece wb pn) -> wb == current game
+            then
+              ( if valid (board game) validMove
+                  then
+                    if not (isInCheck (makeMoveSamePlayer validMove game))
+                      then do
+                        if isInCheck (makeMove validMove game)
+                          then liftIO $ putStrLn "In check"
+                          else pure ()
+                        let updateGame = makeMove validMove game
+                        put $ updateGame {history = Just game}
+                        liftIO $ putStrLn "Do you want to undo (Y/N)?"
+                        res <- liftIO getLine
+                        case res of
+                          "Y" -> put game
+                          _ -> pure ()
+                      else liftIO $ putStrLn "You are in check"
+                  else liftIO $ putStrLn "Invalid move"
+              )
+            else liftIO $ putStrLn "Wrong player's move"
+  newGame <- get
+  liftIO $ displayBoard (board newGame)
+  playGame
 
 main :: IO ()
 main = do
